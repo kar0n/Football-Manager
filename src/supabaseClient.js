@@ -1,10 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Hardcoding the public anon keys since this is deployed to Vercel without env vars
+const supabaseUrl = 'https://yzxuybthyvqyqfcsnjif.supabase.co';
+const supabaseAnonKey = 'sb_publishable_SEGKG741prshjZK_RMnEYw_3mDm_17E';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Supabase credentials not found. Check your .env.local file.");
-}
-
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder');
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

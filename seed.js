@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const names = [
   "Arshad", "Kau", "Mohit", "Manoj", "Harshall", "Anshul", "Shrey", "Naved", "Anil", "Zariyab", "Adnan", "Vedang", "Vicky", "Mrudang",
-  "Golu", "Subhav", "Shashank", "Karan P", "Arnav", "Krish", "Sudhanshu", "Karan S"
+  "Golu", "Subhav", "Shashank", "Karan P", "Arnav", "Krish", "Sudhanshu"
 ];
 
 const allPlayers = names.map((name, index) => ({
@@ -28,7 +28,7 @@ async function seed() {
   if (error) {
     console.error("Error seeding data:", error);
   } else {
-    console.log("Successfully seeded 22 players to Supabase!");
+    console.log(`Successfully seeded ${names.length} players to Supabase!`);
   }
 }
 
