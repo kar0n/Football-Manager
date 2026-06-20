@@ -97,7 +97,7 @@ function App() {
   const [isJoining, setIsJoining] = useState(false);
   
   // Admin States
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [teamsFinalized, setTeamsFinalized] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const hasUnsavedChangesRef = useRef(false);
@@ -190,19 +190,8 @@ function App() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  // Auto-redirect non-admins to matchup view when teams are finalized
-  useEffect(() => {
-    if (teamsFinalized && !isAdmin) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setViewMode('matchup');
-    }
-  }, [teamsFinalized, isAdmin]);
-
-  // Restrict non-admins from manually viewing unfinalized matchups
-  let displayMode = viewMode;
-  if (!isAdmin && (!matchup || !teamsFinalized)) {
-    displayMode = 'roster';
-  }
+  // Everyone always starts on roster. Only admins can switch to matchup.
+  const displayMode = viewMode;
 
   const totalPlayers = allPlayers.length;
   let capacity = 10;
@@ -217,32 +206,21 @@ function App() {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
-  const handleAdminLogin = () => {
-    if (isAdmin) {
-      setIsAdmin(false);
-      localStorage.removeItem('isAdmin');
-      if (viewMode === 'matchup' && !teamsFinalized) {
-        setViewMode('roster');
+  // Handles the "Generate Teams" / "View Matchup" button click.
+  // Always prompts for password. On success, shows the matchup view.
+  const handleMatchupAccess = () => {
+    const pwd = window.prompt("Enter admin password:");
+    if (pwd === "admin") {
+      setIsAdmin(true);
+      // If no matchup exists yet, generate one fresh
+      if (!matchup) {
+        generateTeams();
+      } else {
+        // Matchup already exists (previously finalized), just show it
+        setViewMode('matchup');
       }
-    } else {
-      // If we're just clicking the lock icon on the roster without a full list, we might not want to prevent login completely, 
-      // but the original logic blocked login if capacity wasn't met. We'll leave it as is.
-      if (confirmedPlayers.length < capacity) {
-        alert(`We need at least ${capacity} players to create teams!`);
-        return;
-      }
-      
-      const pwd = window.prompt("Enter admin password:");
-      if (pwd === "admin") {
-        setIsAdmin(true);
-        localStorage.setItem('isAdmin', 'true');
-        // Only auto-generate if we are logging in from the "Generate Teams" button workflow
-        if (confirmedPlayers.length === capacity && !matchup) {
-          generateTeams();
-        }
-      } else if (pwd !== null) {
-        alert("Incorrect password");
-      }
+    } else if (pwd !== null) {
+      alert("Incorrect password");
     }
   };
 
@@ -393,7 +371,7 @@ function App() {
               text: 'Here are the finalized teams!'
             });
             setIsAdmin(false);
-            localStorage.removeItem('isAdmin');
+            setHasUnsavedChanges(false);
             setViewMode('roster');
           } catch (err) {
             console.log('Share dismissed:', err);
@@ -408,7 +386,7 @@ function App() {
           URL.revokeObjectURL(url);
           alert('Image downloaded! Your browser does not support native file sharing.');
           setIsAdmin(false);
-          localStorage.removeItem('isAdmin');
+          setHasUnsavedChanges(false);
           setViewMode('roster');
         }
         setIsSharing(false);
@@ -534,11 +512,14 @@ function App() {
     if (hasUnsavedChanges) {
       if (window.confirm("You haven't clicked 'Finalize & Share' yet.\n\nAre you sure you want to go back? Your current team layout will be lost.")) {
         setHasUnsavedChanges(false);
+        // Revert to master state from DB
         const { data } = await supabase.from('game_state').select('matchup').eq('id', 1).single();
         if (data) setMatchup(data.matchup);
+        setIsAdmin(false);
         setViewMode('roster');
       }
     } else {
+      setIsAdmin(false);
       setViewMode('roster');
     }
   };
@@ -573,14 +554,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="app-header" style={{ position: 'relative' }}>
-        <button 
-          onClick={handleAdminLogin} 
-          style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: isAdmin ? 'var(--accent-primary)' : 'rgba(248, 250, 252, 0.6)', cursor: 'pointer', padding: '0.5rem', zIndex: 50 }}
-          title={isAdmin ? "Logout Admin" : "Admin Login"}
-        >
-          {isAdmin ? <Unlock size={18} /> : <Lock size={18} />}
-        </button>
+      <header className="app-header">
         <h1 className="title text-gradient">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '10px', marginTop: '-4px' }}>
             <rect x="2" y="3" width="20" height="18" rx="2" ry="2" />
@@ -767,7 +741,7 @@ function App() {
               </div>
 
               {confirmedPlayers.length === capacity && (
-                <button className="action-btn" onClick={isAdmin ? (matchup ? () => setViewMode('matchup') : generateTeams) : handleAdminLogin}>
+                <button className="action-btn" onClick={handleMatchupAccess}>
                   {matchup ? (
                     <><ArrowRight size={20} /> View Matchup</>
                   ) : (
