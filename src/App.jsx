@@ -566,7 +566,7 @@ function App() {
       <header className="app-header" style={{ position: 'relative' }}>
         <button 
           onClick={handleAdminLogin} 
-          style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: isAdmin ? 'var(--accent-primary)' : 'rgba(248, 250, 252, 0.2)', cursor: 'pointer', padding: '0.5rem' }}
+          style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: isAdmin ? 'var(--accent-primary)' : 'rgba(248, 250, 252, 0.6)', cursor: 'pointer', padding: '0.5rem', zIndex: 50 }}
           title={isAdmin ? "Logout Admin" : "Admin Login"}
         >
           {isAdmin ? <Unlock size={18} /> : <Lock size={18} />}
