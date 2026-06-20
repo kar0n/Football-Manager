@@ -97,7 +97,7 @@ function App() {
   const [isJoining, setIsJoining] = useState(false);
   
   // Admin States
-  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [teamsFinalized, setTeamsFinalized] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const hasUnsavedChangesRef = useRef(false);
@@ -105,6 +105,17 @@ function App() {
   useEffect(() => {
     hasUnsavedChangesRef.current = hasUnsavedChanges;
   }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChangesRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const updateGameState = async (updates) => {
     try {
@@ -209,7 +220,6 @@ function App() {
   const handleAdminLogin = () => {
     if (isAdmin) {
       setIsAdmin(false);
-      localStorage.removeItem('isAdmin');
       if (viewMode === 'matchup' && !teamsFinalized) {
         setViewMode('roster');
       }
@@ -224,7 +234,6 @@ function App() {
       const pwd = window.prompt("Enter admin password:");
       if (pwd === "admin") {
         setIsAdmin(true);
-        localStorage.setItem('isAdmin', 'true');
         // Only auto-generate if we are logging in from the "Generate Teams" button workflow
         if (confirmedPlayers.length === capacity && !matchup) {
           generateTeams();
