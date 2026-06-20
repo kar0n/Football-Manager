@@ -92,8 +92,9 @@ function App() {
   // App States
   const [matchup, setMatchup] = useState(null);
   const [activeId, setActiveId] = useState(null);
-  const [viewMode, setViewMode] = useState('roster'); // 'roster' | 'matchup'
+  const [viewMode, setViewMode] = useState('roster'); // 'roster' | 'matchup' | 'image'
   const [isSharing, setIsSharing] = useState(false);
+  const [savedImageUrl, setSavedImageUrl] = useState(null);
   const [isJoining, setIsJoining] = useState(false);
   
   // Admin States
@@ -363,7 +364,7 @@ function App() {
         
         const file = new File([blob], 'football-matchup.png', { type: 'image/png' });
         
-        // Try native file sharing (Safari iOS, Chrome Android)
+        // Try native file sharing (Safari iOS, Chrome Android, Brave)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
@@ -374,16 +375,18 @@ function App() {
           } catch (err) {
             console.log('Share dismissed:', err);
           }
+          setIsAdmin(false);
+          setHasUnsavedChanges(false);
+          setViewMode('roster');
         } else {
-          // Fallback (Chrome iOS, desktop): Open image in a new tab so user can save it
+          // Fallback: Show image directly on the page so user can save it
           const imageUrl = URL.createObjectURL(blob);
-          window.open(imageUrl, '_blank');
-          alert('The team image has been opened in a new tab.\n\nLong-press the image → Save to Photos → Share on WhatsApp.');
+          setSavedImageUrl(imageUrl);
+          setIsAdmin(false);
+          setHasUnsavedChanges(false);
+          setViewMode('image');
         }
         
-        setIsAdmin(false);
-        setHasUnsavedChanges(false);
-        setViewMode('roster');
         setIsSharing(false);
       }, 'image/png');
 
@@ -564,7 +567,27 @@ function App() {
       </header>
 
       <main className="main-content">
-        {(displayMode === 'matchup' && matchup) ? (
+        {viewMode === 'image' && savedImageUrl ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6 }}>
+              <p style={{ fontWeight: 600, color: '#f8fafc', fontSize: '1.1rem', marginBottom: '0.5rem' }}>📸 Team image generated!</p>
+              <p><strong>Long-press</strong> the image below → <strong>Save to Photos</strong></p>
+              <p>Then share it on WhatsApp from your gallery.</p>
+            </div>
+            <img 
+              src={savedImageUrl} 
+              alt="Finalized Teams" 
+              style={{ width: '100%', maxWidth: '500px', borderRadius: '12px', border: '2px solid rgba(148, 163, 184, 0.2)' }} 
+            />
+            <button 
+              className="action-btn secondary" 
+              onClick={() => { setSavedImageUrl(null); setViewMode('roster'); }} 
+              style={{ width: 'fit-content', padding: '0.75rem 2rem', marginTop: '0.5rem' }}
+            >
+              ✓ Done
+            </button>
+          </div>
+        ) : (displayMode === 'matchup' && matchup) ? (
           <div className="matchup-container">
             <div className="matchup-header-actions" style={{ marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="action-btn secondary" onClick={handleBackClick} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0 }}>
