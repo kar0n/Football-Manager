@@ -431,27 +431,28 @@ function App() {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
+    setMatchup((prev) => {
+      const activeId = active.id;
+      const overId = over.id;
 
-    const findContainer = (id) => {
-      if (matchup.teamA.players.find(p => p.id === id)) return 'teamA';
-      if (matchup.teamB.players.find(p => p.id === id)) return 'teamB';
-      return null;
-    };
+      const findContainer = (id, state) => {
+        if (state.teamA.players.find(p => p.id === id)) return 'teamA';
+        if (state.teamB.players.find(p => p.id === id)) return 'teamB';
+        return null;
+      };
 
-    const activeContainer = findContainer(activeId);
-    const overContainer = findContainer(overId);
+      const activeContainer = findContainer(activeId, prev);
+      const overContainer = findContainer(overId, prev);
 
-    if (!activeContainer || !overContainer || activeContainer !== overContainer) {
-      return;
-    }
+      if (!activeContainer || !overContainer || activeContainer !== overContainer) {
+        updateGameState({ matchup: prev });
+        return prev;
+      }
 
-    const activeIndex = matchup[activeContainer].players.findIndex(p => p.id === activeId);
-    const overIndex = matchup[overContainer].players.findIndex(p => p.id === overId);
+      const activeIndex = prev[activeContainer].players.findIndex(p => p.id === activeId);
+      const overIndex = prev[overContainer].players.findIndex(p => p.id === overId);
 
-    if (activeIndex !== overIndex) {
-      setMatchup((prev) => {
+      if (activeIndex !== overIndex) {
         const items = [...prev[activeContainer].players];
         const item = items[activeIndex];
         items.splice(activeIndex, 1);
@@ -462,8 +463,11 @@ function App() {
         };
         updateGameState({ matchup: finalMatchup });
         return finalMatchup;
-      });
-    }
+      }
+
+      updateGameState({ matchup: prev });
+      return prev;
+    });
   };
 
   const handleDragCancel = () => {
