@@ -526,14 +526,9 @@ function App() {
                 <ArrowLeft size={18} /> Back
               </button>
               {isAdmin && (
-                <>
-                  <button className="action-btn secondary" onClick={generateTeams} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0, gap: '0.25rem', color: '#f59e0b', borderColor: '#f59e0b' }}>
-                    <RefreshCw size={18} /> Shuffle Teams
-                  </button>
-                  <button className="action-btn secondary" onClick={toggleColors} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0, gap: '0.25rem', ...toggleProps.style }}>
-                    <Palette size={18} /> {toggleProps.text}
-                  </button>
-                </>
+                <button className="action-btn secondary" onClick={toggleColors} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0, gap: '0.25rem', ...toggleProps.style }}>
+                  <Palette size={18} /> {toggleProps.text}
+                </button>
               )}
             </div>
             
