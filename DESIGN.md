@@ -5,49 +5,14 @@ This document maps out the core data flow, synchronization mechanisms, and autom
 ## 🏗 System Diagram
 
 ```mermaid
-graph TD
-    subgraph Client Application
-        UI[React UI State]
-        Auth[Admin Layer]
-        DND[Drag & Drop Matchup Builder]
-    end
+graph LR
+    Client[React Frontend] 
+    DB[(Supabase Database)]
+    Realtime[Supabase Realtime]
 
-    subgraph Supabase Backend
-        DB[(game_state Table)]
-        WS[Realtime Websocket Channel]
-    end
-
-    subgraph Time-Based Logic
-        Roll{Lazy Rollover Check}
-        Reg{Registration Lock Check}
-    end
-
-    %% Client Initialization Flow
-    UI -->|onLoad / fetchState| Roll
-    Roll -->|date > last_rollover AND gameDay| RollExec[Truncate Waitlist, Carry Forward Confirmed]
-    RollExec -->|Update| DB
-    Roll -->|date <= last_rollover| LoadData[Load Current Roster]
-    LoadData --> UI
-
-    %% User Actions
-    UI -->|User taps 'Join Game'| Reg
-    Reg -->|12AM - 7AM Weekday| Block[Show 'Registration Closed' Alert]
-    Reg -->|Allowed| AddPlayer[Append to Player List]
-    AddPlayer -->|Push State| DB
-
-    %% Synchronization
-    DB -.->|PostgreSQL UPDATE Event| WS
-    WS -.->|Broadcast Payload| UI
-
-    %% Admin Operations
-    UI -->|Enter Password| Auth
-    Auth -->|Generate Teams| DND
-    DND -->|Adjust Balance| DND
-    DND -->|Finalize Teams| Finalize[Set teams_finalized = true]
-    Finalize --> DB
-    
-    %% Event Reaction
-    WS -.->|If teams_finalized| AutoRedirect[Force Redirect Non-Admins to Matchup View]
+    Client -->|Read/Write State| DB
+    DB -->|Triggers Event| Realtime
+    Realtime -.->|Live Broadcast| Client
 ```
 
 ## 🧩 Architectural Decisions
