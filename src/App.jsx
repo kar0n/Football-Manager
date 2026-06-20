@@ -345,18 +345,6 @@ function App() {
   };
 
   const handleShare = async () => {
-    let finalShareText = '';
-    // Only prompt for text if the device supports native sharing
-    if (navigator.canShare) {
-      const defaultText = `Game On: ${targetDay.full}\nHere are the finalized teams!`;
-      const promptResult = window.prompt("Edit your message to share with the image:", defaultText);
-      
-      if (promptResult === null) {
-        return; // Cancelled
-      }
-      finalShareText = promptResult;
-    }
-
     setIsSharing(true);
     setTeamsFinalized(true);
     setHasUnsavedChanges(false);
@@ -378,11 +366,11 @@ function App() {
         const file = new File([blob], 'football-matchup.png', { type: 'image/png' });
         
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
+          navigator.share({
             files: [file],
             title: 'Weekday Football Matchup',
-            text: finalShareText
-          });
+            text: 'Here are the finalized teams!'
+          }).catch((err) => console.log('Share dismissed:', err));
         } else {
           // Fallback: download the image
           const url = URL.createObjectURL(blob);
