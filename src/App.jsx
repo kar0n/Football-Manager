@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { ShieldAlert, Users, Zap, X, Share2, ArrowLeft, ArrowRight, RefreshCw, Palette, Lock, Unlock, CheckCircle, GripVertical } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, TouchSensor, MouseSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
@@ -99,6 +99,12 @@ function App() {
   // Admin States
   const [isAdmin, setIsAdmin] = useState(false);
   const [teamsFinalized, setTeamsFinalized] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const hasUnsavedChangesRef = useRef(false);
+
+  useEffect(() => {
+    hasUnsavedChangesRef.current = hasUnsavedChanges;
+  }, [hasUnsavedChanges]);
 
   const updateGameState = async (updates) => {
     try {
@@ -146,8 +152,27 @@ function App() {
     const channel = supabase.channel('schema-db-changes')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state' }, (payload) => {
         setAllPlayers(payload.new.all_players || []);
-        setMatchup(payload.new.matchup);
-        setTeamsFinalized(payload.new.teams_finalized || false);
+        
+        if (payload.new.teams_finalized && payload.new.matchup) {
+           if (hasUnsavedChangesRef.current) {
+               alert("Another admin has finalized a team matchup. Your view will now refresh.");
+               setHasUnsavedChanges(false);
+           }
+           setTeamsFinalized(true);
+           setMatchup(payload.new.matchup);
+        } else {
+           if (payload.new.matchup === null) {
+              if (hasUnsavedChangesRef.current) {
+                  alert("The roster has changed! Your team draft has been reset.");
+                  setHasUnsavedChanges(false);
+              }
+              setMatchup(null);
+              setTeamsFinalized(false);
+           } else if (!hasUnsavedChangesRef.current) {
+              setMatchup(payload.new.matchup);
+              setTeamsFinalized(payload.new.teams_finalized || false);
+           }
+        }
       })
       .subscribe();
 
@@ -297,7 +322,7 @@ function App() {
     setMatchup(newMatchup);
     setTeamsFinalized(false);
     setViewMode('matchup');
-    updateGameState({ matchup: newMatchup, teams_finalized: false });
+    setHasUnsavedChanges(true);
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 10);
@@ -316,13 +341,14 @@ function App() {
       teamB: { ...matchup.teamB, name: `Team ${colors[1]}`, colorCode: colorHex[1] }
     };
     setMatchup(newMatchup);
-    updateGameState({ matchup: newMatchup });
+    setHasUnsavedChanges(true);
   };
 
   const handleShare = async () => {
     setIsSharing(true);
     setTeamsFinalized(true);
-    updateGameState({ teams_finalized: true });
+    setHasUnsavedChanges(false);
+    updateGameState({ matchup: matchup, teams_finalized: true });
     
     try {
       const captureArea = document.getElementById('matchup-capture-area');
@@ -445,7 +471,7 @@ function App() {
       const overContainer = findContainer(overId, prev);
 
       if (!activeContainer || !overContainer || activeContainer !== overContainer) {
-        updateGameState({ matchup: prev });
+        setHasUnsavedChanges(true);
         return prev;
       }
 
@@ -461,17 +487,30 @@ function App() {
           ...prev,
           [activeContainer]: { ...prev[activeContainer], players: items }
         };
-        updateGameState({ matchup: finalMatchup });
+        setHasUnsavedChanges(true);
         return finalMatchup;
       }
 
-      updateGameState({ matchup: prev });
+      setHasUnsavedChanges(true);
       return prev;
     });
   };
 
   const handleDragCancel = () => {
     setActiveId(null);
+  };
+
+  const handleBackClick = async () => {
+    if (hasUnsavedChanges) {
+      if (window.confirm("You have unsaved changes! Click OK to discard them and go back, or Cancel to stay here.")) {
+        setHasUnsavedChanges(false);
+        const { data } = await supabase.from('game_state').select('matchup').eq('id', 1).single();
+        if (data) setMatchup(data.matchup);
+        setViewMode('roster');
+      }
+    } else {
+      setViewMode('roster');
+    }
   };
 
   const getToggleProps = () => {
@@ -522,7 +561,7 @@ function App() {
         {(displayMode === 'matchup' && matchup) ? (
           <div className="matchup-container">
             <div className="matchup-header-actions" style={{ marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="action-btn secondary" onClick={() => setViewMode('roster')} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0 }}>
+              <button className="action-btn secondary" onClick={handleBackClick} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0 }}>
                 <ArrowLeft size={18} /> Back
               </button>
               {isAdmin && (
