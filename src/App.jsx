@@ -363,10 +363,7 @@ function App() {
         
         const file = new File([blob], 'football-matchup.png', { type: 'image/png' });
         
-        // Strategy: Try sharing with file (Safari), then without file (Chrome iOS), then download
-        let shared = false;
-        
-        // Attempt 1: Share with image file attached (Safari, Chrome Android)
+        // Try native file sharing (Safari iOS, Chrome Android)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
@@ -374,43 +371,14 @@ function App() {
               title: 'Weekday Football Matchup',
               text: 'Here are the finalized teams!'
             });
-            shared = true;
           } catch (err) {
-            console.log('File share dismissed:', err);
+            console.log('Share dismissed:', err);
           }
-        }
-        
-        // Attempt 2: Download image + open share sheet without file (Chrome iOS)
-        if (!shared && navigator.share) {
-          // First, save the image to the user's device
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'football-matchup.png';
-          a.click();
-          URL.revokeObjectURL(url);
-          
-          try {
-            await navigator.share({
-              title: 'Weekday Football Matchup',
-              text: 'Here are the finalized teams! 📸 (Image saved to your downloads)'
-            });
-            shared = true;
-          } catch (err) {
-            console.log('Text share dismissed:', err);
-            shared = true; // Image was already downloaded
-          }
-        }
-        
-        // Attempt 3: Pure fallback — just download
-        if (!shared) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'football-matchup.png';
-          a.click();
-          URL.revokeObjectURL(url);
-          alert('Image saved! Share it from your Downloads or Photos app.');
+        } else {
+          // Fallback (Chrome iOS, desktop): Open image in a new tab so user can save it
+          const imageUrl = URL.createObjectURL(blob);
+          window.open(imageUrl, '_blank');
+          alert('The team image has been opened in a new tab.\n\nLong-press the image → Save to Photos → Share on WhatsApp.');
         }
         
         setIsAdmin(false);
