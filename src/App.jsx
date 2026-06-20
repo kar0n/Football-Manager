@@ -97,7 +97,7 @@ function App() {
   const [isJoining, setIsJoining] = useState(false);
   
   // Admin States
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true');
   const [teamsFinalized, setTeamsFinalized] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const hasUnsavedChangesRef = useRef(false);
@@ -209,8 +209,13 @@ function App() {
   const handleAdminLogin = () => {
     if (isAdmin) {
       setIsAdmin(false);
-      setViewMode('roster');
+      localStorage.removeItem('isAdmin');
+      if (viewMode === 'matchup' && !teamsFinalized) {
+        setViewMode('roster');
+      }
     } else {
+      // If we're just clicking the lock icon on the roster without a full list, we might not want to prevent login completely, 
+      // but the original logic blocked login if capacity wasn't met. We'll leave it as is.
       if (confirmedPlayers.length < capacity) {
         alert(`We need at least ${capacity} players to create teams!`);
         return;
@@ -219,7 +224,11 @@ function App() {
       const pwd = window.prompt("Enter admin password:");
       if (pwd === "admin") {
         setIsAdmin(true);
-        generateTeams(); // Instantly create teams and redirect
+        localStorage.setItem('isAdmin', 'true');
+        // Only auto-generate if we are logging in from the "Generate Teams" button workflow
+        if (confirmedPlayers.length === capacity && !matchup) {
+          generateTeams();
+        }
       } else if (pwd !== null) {
         alert("Incorrect password");
       }
@@ -543,7 +552,14 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="header">
+      <header className="app-header" style={{ position: 'relative' }}>
+        <button 
+          onClick={handleAdminLogin} 
+          style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: isAdmin ? 'var(--accent-primary)' : 'rgba(248, 250, 252, 0.2)', cursor: 'pointer', padding: '0.5rem' }}
+          title={isAdmin ? "Logout Admin" : "Admin Login"}
+        >
+          {isAdmin ? <Unlock size={18} /> : <Lock size={18} />}
+        </button>
         <h1 className="title text-gradient">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '10px', marginTop: '-4px' }}>
             <rect x="2" y="3" width="20" height="18" rx="2" ry="2" />
