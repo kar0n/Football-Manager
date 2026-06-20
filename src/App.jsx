@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Users, ShieldAlert, X, Zap, RefreshCw, ArrowLeft, Palette, GripVertical, Lock, Unlock, CheckCircle, Share2 } from 'lucide-react';
+import { ShieldAlert, Users, Zap, X, Share2, ArrowLeft, ArrowRight, RefreshCw, Palette, Lock, Unlock, CheckCircle, GripVertical } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, TouchSensor, MouseSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -521,14 +521,19 @@ function App() {
       <main className="main-content">
         {(displayMode === 'matchup' && matchup) ? (
           <div className="matchup-container">
-            <div className="matchup-header-actions" style={{ marginTop: '-0.25rem', marginBottom: '0.5rem' }}>
+            <div className="matchup-header-actions" style={{ marginTop: '-0.25rem', marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="action-btn secondary" onClick={() => setViewMode('roster')} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0 }}>
                 <ArrowLeft size={18} /> Back
               </button>
               {isAdmin && (
-                <button className="action-btn secondary" onClick={toggleColors} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0, gap: '0.25rem', ...toggleProps.style }}>
-                  <Palette size={18} /> {toggleProps.text}
-                </button>
+                <>
+                  <button className="action-btn secondary" onClick={generateTeams} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0, gap: '0.25rem', color: '#f59e0b', borderColor: '#f59e0b' }}>
+                    <RefreshCw size={18} /> Shuffle Teams
+                  </button>
+                  <button className="action-btn secondary" onClick={toggleColors} style={{ width: 'fit-content', padding: '0.6rem 1rem', fontSize: '1rem', marginTop: 0, gap: '0.25rem', ...toggleProps.style }}>
+                    <Palette size={18} /> {toggleProps.text}
+                  </button>
+                </>
               )}
             </div>
             
@@ -691,8 +696,12 @@ function App() {
               </div>
 
               {confirmedPlayers.length === capacity && (
-                <button className="action-btn" onClick={isAdmin ? generateTeams : handleAdminLogin}>
-                  <Zap size={20} /> Generate Teams
+                <button className="action-btn" onClick={isAdmin ? (matchup ? () => setViewMode('matchup') : generateTeams) : handleAdminLogin}>
+                  {matchup ? (
+                    <><ArrowRight size={20} /> View Matchup</>
+                  ) : (
+                    <><Zap size={20} /> Generate Teams</>
+                  )}
                 </button>
               )}
             </section>
