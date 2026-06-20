@@ -396,3 +396,14 @@
   color: var(--text-muted);
   font-style: italic;
 }
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

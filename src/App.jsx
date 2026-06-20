@@ -95,6 +95,7 @@ function App() {
   const [viewMode, setViewMode] = useState('roster'); // 'roster' | 'matchup' | 'image'
   const [isSharing, setIsSharing] = useState(false);
   const [savedImageUrl, setSavedImageUrl] = useState(null);
+  const [showToast, setShowToast] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   
   // Admin States
@@ -117,6 +118,12 @@ function App() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
+
+  // Block pull-to-refresh on mobile when there are unsaved changes
+  useEffect(() => {
+    document.body.style.overscrollBehaviorY = hasUnsavedChanges ? 'contain' : 'auto';
+    return () => { document.body.style.overscrollBehaviorY = 'auto'; };
+  }, [hasUnsavedChanges]);
 
   const updateGameState = async (updates) => {
     try {
@@ -351,7 +358,11 @@ function App() {
     setIsSharing(true);
     setTeamsFinalized(true);
     setHasUnsavedChanges(false);
-    updateGameState({ matchup: matchup, teams_finalized: true });
+    await updateGameState({ matchup: matchup, teams_finalized: true });
+    
+    // Show success toast
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
     
     try {
       const captureArea = document.getElementById('matchup-capture-area');
@@ -556,6 +567,19 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Success Toast */}
+      {showToast && (
+        <div style={{
+          position: 'fixed', top: '1rem', left: '50%', transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white',
+          padding: '0.75rem 1.5rem', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 600,
+          zIndex: 9999, boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          animation: 'fadeInDown 0.3s ease-out'
+        }}>
+          <CheckCircle size={18} /> Teams finalized successfully!
+        </div>
+      )}
       <header className="app-header">
         <h1 className="title text-gradient">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '10px', marginTop: '-4px' }}>
