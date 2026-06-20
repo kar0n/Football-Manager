@@ -208,17 +208,21 @@ function App() {
   };
 
   // Handles the "Generate Teams" / "View Matchup" button click.
-  // Always prompts for password. On success, shows the matchup view.
-  const handleMatchupAccess = () => {
+  // Always prompts for password. On success, fetches latest state from DB before showing.
+  const handleMatchupAccess = async () => {
     const pwd = window.prompt("Enter admin password:");
     if (pwd === "admin") {
       setIsAdmin(true);
-      // If no matchup exists yet, generate one fresh
-      if (!matchup) {
-        generateTeams();
-      } else {
-        // Matchup already exists (previously finalized), just show it
+      // Always fetch the absolute latest matchup from the database
+      // to prevent stale views when realtime updates are missed
+      const { data } = await supabase.from('game_state').select('matchup, teams_finalized').eq('id', 1).single();
+      if (data && data.matchup) {
+        setMatchup(data.matchup);
+        setTeamsFinalized(data.teams_finalized || false);
         setViewMode('matchup');
+      } else {
+        // No matchup exists yet, generate a fresh one
+        generateTeams();
       }
     } else if (pwd !== null) {
       alert("Incorrect password");
