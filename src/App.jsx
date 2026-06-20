@@ -386,11 +386,18 @@ function App() {
         const file = new File([blob], 'football-matchup.png', { type: 'image/png' });
         
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          navigator.share({
-            files: [file],
-            title: 'Weekday Football Matchup',
-            text: 'Here are the finalized teams!'
-          }).catch((err) => console.log('Share dismissed:', err));
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'Weekday Football Matchup',
+              text: 'Here are the finalized teams!'
+            });
+            setIsAdmin(false);
+            localStorage.removeItem('isAdmin');
+            setViewMode('roster');
+          } catch (err) {
+            console.log('Share dismissed:', err);
+          }
         } else {
           // Fallback: download the image
           const url = URL.createObjectURL(blob);
@@ -400,6 +407,9 @@ function App() {
           a.click();
           URL.revokeObjectURL(url);
           alert('Image downloaded! Your browser does not support native file sharing.');
+          setIsAdmin(false);
+          localStorage.removeItem('isAdmin');
+          setViewMode('roster');
         }
         setIsSharing(false);
       }, 'image/png');
