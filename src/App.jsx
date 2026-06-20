@@ -363,6 +363,10 @@ function App() {
         
         const file = new File([blob], 'football-matchup.png', { type: 'image/png' });
         
+        // Strategy: Try sharing with file (Safari), then without file (Chrome iOS), then download
+        let shared = false;
+        
+        // Attempt 1: Share with image file attached (Safari, Chrome Android)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
@@ -370,25 +374,48 @@ function App() {
               title: 'Weekday Football Matchup',
               text: 'Here are the finalized teams!'
             });
-            setIsAdmin(false);
-            setHasUnsavedChanges(false);
-            setViewMode('roster');
+            shared = true;
           } catch (err) {
-            console.log('Share dismissed:', err);
+            console.log('File share dismissed:', err);
           }
-        } else {
-          // Fallback: download the image
+        }
+        
+        // Attempt 2: Download image + open share sheet without file (Chrome iOS)
+        if (!shared && navigator.share) {
+          // First, save the image to the user's device
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
           a.download = 'football-matchup.png';
           a.click();
           URL.revokeObjectURL(url);
-          alert('Image downloaded! Your browser does not support native file sharing.');
-          setIsAdmin(false);
-          setHasUnsavedChanges(false);
-          setViewMode('roster');
+          
+          try {
+            await navigator.share({
+              title: 'Weekday Football Matchup',
+              text: 'Here are the finalized teams! 📸 (Image saved to your downloads)'
+            });
+            shared = true;
+          } catch (err) {
+            console.log('Text share dismissed:', err);
+            shared = true; // Image was already downloaded
+          }
         }
+        
+        // Attempt 3: Pure fallback — just download
+        if (!shared) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'football-matchup.png';
+          a.click();
+          URL.revokeObjectURL(url);
+          alert('Image saved! Share it from your Downloads or Photos app.');
+        }
+        
+        setIsAdmin(false);
+        setHasUnsavedChanges(false);
+        setViewMode('roster');
         setIsSharing(false);
       }, 'image/png');
 
