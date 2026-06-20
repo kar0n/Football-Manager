@@ -510,7 +510,7 @@ function App() {
 
   const handleBackClick = async () => {
     if (hasUnsavedChanges) {
-      if (window.confirm("You have unsaved changes! Click OK to discard them and go back, or Cancel to stay here.")) {
+      if (window.confirm("You haven't clicked 'Finalize & Share' yet.\n\nAre you sure you want to go back? Your current team layout will be lost.")) {
         setHasUnsavedChanges(false);
         const { data } = await supabase.from('game_state').select('matchup').eq('id', 1).single();
         if (data) setMatchup(data.matchup);
