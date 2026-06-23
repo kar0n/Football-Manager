@@ -274,14 +274,17 @@ function App() {
   };
   const targetDay = getTargetGameDay();
 
-  const handleJoinPrompt = () => {
+  const handleJoinPrompt = async () => {
     if (isRegistrationBlocked) {
       alert("Registration is closed from Midnight to 7:00 AM IST on weekdays.");
       return;
     }
     const name = window.prompt("Enter your name:");
     if (name && name.trim()) {
-      const newPlayers = [...allPlayers, { id: Date.now().toString(), name: name.trim(), joinedAt: Date.now() }];
+      // Fetch the latest player list from DB to avoid overwriting other players
+      const { data } = await supabase.from('game_state').select('all_players').eq('id', 1).single();
+      const currentPlayers = (data && data.all_players) || [];
+      const newPlayers = [...currentPlayers, { id: Date.now().toString(), name: name.trim(), joinedAt: Date.now() }];
       setAllPlayers(newPlayers);
       setMatchup(null);
       setTeamsFinalized(false);
@@ -297,9 +300,12 @@ function App() {
     }
   };
 
-  const handleRemove = (idToRemove, name) => {
+  const handleRemove = async (idToRemove, name) => {
     if (window.confirm(`Are you sure you want to remove ${name} from the roster?`)) {
-      const newPlayers = allPlayers.filter(p => p.id !== idToRemove);
+      // Fetch the latest player list from DB to avoid overwriting other players
+      const { data } = await supabase.from('game_state').select('all_players').eq('id', 1).single();
+      const currentPlayers = (data && data.all_players) || [];
+      const newPlayers = currentPlayers.filter(p => p.id !== idToRemove);
       setAllPlayers(newPlayers);
       setMatchup(null);
       setTeamsFinalized(false);
