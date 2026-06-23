@@ -220,7 +220,20 @@ function App() {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    // Re-fetch state when the browser tab becomes active again.
+    // This fixes stale data if the tab was backgrounded and the WebSocket dropped,
+    // or if the tab was left open across midnight (triggering a fresh rollover check).
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchState();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Everyone always starts on roster. Only admins can switch to matchup.
