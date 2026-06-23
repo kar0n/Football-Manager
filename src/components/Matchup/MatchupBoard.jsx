@@ -19,35 +19,29 @@ export const MatchupBoard = ({
 
   const renderTeam = (teamData, teamKey, title) => {
     return (
-      <div className="flex-1 bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-slate-200/50 shadow-sm">
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-          <div className="flex items-center gap-2">
-            <span 
-              className="w-4 h-4 rounded-full shadow-sm"
-              style={{ background: teamData.color }}
-            />
-          </div>
+      <div className="team-card" style={{ flex: 1, '--team-color': teamData.colorCode }}>
+        <div className="team-header">
+          <h3 className="team-name" style={{ color: teamData.colorCode }}>{title}</h3>
         </div>
         
         <SortableContext 
           items={teamData.players.map(p => p.id)}
           strategy={rectSortingStrategy}
         >
-          <div className="space-y-2 min-h-[200px]">
+          <div className="player-list" style={{ minHeight: '200px' }}>
             {teamData.players.map((player, index) => (
               <SortablePlayerItem 
                 key={player.id} 
                 player={player} 
                 index={index}
-                teamColor={teamData.color}
+                teamColor={teamData.colorCode}
                 teamName={title}
                 isAdmin={isAdmin && !teamsFinalized}
                 isCompact={true}
               />
             ))}
             {teamData.players.length === 0 && (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm italic py-8 border-2 border-dashed border-slate-200 rounded-xl">
+              <div className="empty-state" style={{ border: '2px dashed var(--border-subtle)', borderRadius: '12px' }}>
                 Drop players here
               </div>
             )}

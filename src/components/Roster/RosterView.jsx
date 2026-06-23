@@ -18,25 +18,17 @@ export const RosterView = ({
   const targetDay = getTargetGameDay();
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-          <Users size={120} />
-        </div>
+    <div className="main-content">
+      <div className="card">
         
-        <div className="relative z-10 flex justify-between items-end mb-6">
+        <div className="card-header">
           <div>
-            <p className="text-sm font-bold text-emerald-500 uppercase tracking-wider mb-1">
-              Next Game
-            </p>
-            <h2 className="text-2xl font-bold text-slate-800">
+            <h2 className="card-title">
               {targetDay.full}
             </h2>
           </div>
-          <div className="text-right">
-            <span className="inline-block bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-semibold">
-              {capacity / 2}v{capacity / 2} Format
-            </span>
+          <div className="badge">
+            {capacity / 2}v{capacity / 2} Format
           </div>
         </div>
 
@@ -54,10 +46,10 @@ export const RosterView = ({
         removePlayer={removePlayer}
       />
 
-      <div className="pt-8 pb-12 text-center">
+      <div style={{ textAlign: 'center', paddingTop: '1rem', paddingBottom: '3rem' }}>
         <button 
           onClick={handleMatchupAccess}
-          className="text-slate-400 hover:text-slate-600 font-medium text-sm transition-colors border-b border-dashed border-slate-300 hover:border-slate-500 pb-0.5"
+          style={{ background: 'none', border: 'none', borderBottom: '1px dashed var(--text-muted)', color: 'var(--text-muted)', paddingBottom: '0.2rem', cursor: 'pointer', fontSize: '0.85rem' }}
         >
           {teamsFinalized ? "View Final Matchup" : "Admin: Generate Teams"}
         </button>

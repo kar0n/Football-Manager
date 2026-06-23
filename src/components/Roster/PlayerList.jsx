@@ -7,30 +7,25 @@ export const PlayerList = ({ confirmedPlayers, waitlistPlayers, capacity, remove
   const renderPlayer = (player, index, isWaitlist = false) => (
     <div 
       key={player.id} 
-      className={`flex items-center justify-between p-4 rounded-xl mb-3 border transition-all hover:translate-x-1 ${
-        isWaitlist 
-          ? 'bg-slate-50 border-slate-200' 
-          : 'bg-white border-slate-100 shadow-sm hover:shadow-md'
-      }`}
+      className={`player-item ${isWaitlist ? '' : 'confirmed'}`}
+      style={isWaitlist ? { opacity: 0.7, borderStyle: 'dashed' } : {}}
     >
-      <div className="flex items-center gap-4">
-        <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-          isWaitlist ? 'bg-slate-200 text-slate-500' : 'bg-emerald-100 text-emerald-700'
-        }`}>
+      <div className="player-info">
+        <span className="player-number">
           {isWaitlist ? (capacity + index + 1) : (index + 1)}
         </span>
-        <div>
-          <span className={`font-semibold ${isWaitlist ? 'text-slate-600' : 'text-slate-800'}`}>
+        <div className="player-details">
+          <span className="player-name">
             {player.name}
           </span>
-          <div className="text-xs text-slate-400 mt-0.5">
+          <div className="player-meta">
             Joined {formatTime(player.joinedAt)}
           </div>
         </div>
       </div>
       <button 
         onClick={() => removePlayer(player.id)}
-        className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+        className="remove-btn"
         title="Remove player"
       >
         <X size={18} />
@@ -39,17 +34,17 @@ export const PlayerList = ({ confirmedPlayers, waitlistPlayers, capacity, remove
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-4 px-2">
-          <h2 className="text-xl font-bold text-slate-800">Confirmed Playing</h2>
-          <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-semibold">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="card">
+        <div className="card-header">
+          <h2 className="card-title">Confirmed Playing</h2>
+          <span className="badge">
             {confirmedPlayers.length} / {capacity}
           </span>
         </div>
         
         {confirmedPlayers.length === 0 ? (
-          <div className="text-center p-8 bg-white rounded-xl border border-dashed border-slate-300 text-slate-500">
+          <div className="empty-state">
             No players joined yet. Be the first!
           </div>
         ) : (
@@ -60,16 +55,11 @@ export const PlayerList = ({ confirmedPlayers, waitlistPlayers, capacity, remove
       </div>
 
       {waitlistPlayers.length > 0 && (
-        <div className="mt-8 relative">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-slate-200"></div>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title" style={{ color: 'var(--text-muted)' }}>Waitlist ({waitlistPlayers.length})</h2>
           </div>
-          <div className="relative flex justify-center">
-            <span className="bg-slate-50 px-4 text-sm font-semibold text-slate-500 uppercase tracking-wider">
-              Waitlist ({waitlistPlayers.length})
-            </span>
-          </div>
-          <div className="mt-6">
+          <div className="player-list">
             {waitlistPlayers.map((p, i) => renderPlayer(p, i, true))}
           </div>
         </div>

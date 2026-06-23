@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import './App.css';
 import { useGameState } from './hooks/useGameState';
 import { useMatchupMutations } from './hooks/useMatchupMutations';
 import { useTimers } from './hooks/useTimers';
@@ -164,11 +165,11 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-12">
+    <div className="app-container">
       <Toast message="Teams Finalized! Generating image..." />
       {showToast && <Toast message="Teams Finalized! Generating image..." />}
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6">
+      <div className="main-content">
         <Header />
 
         {viewMode === 'roster' && (
@@ -184,7 +185,7 @@ function App() {
         )}
 
         {viewMode === 'matchup' && currentMatchup && (
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <button 
               onClick={() => {
                 if (hasUnsavedChangesRef.current && !window.confirm("You have unsaved changes. Return to roster?")) return;
@@ -192,7 +193,7 @@ function App() {
                 setLocalMatchup(null);
                 syncHasUnsavedChanges(false);
               }}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontWeight: 500, transition: 'color 0.2s' }}
             >
               <ArrowLeft size={18} /> Back to Roster
             </button>
@@ -220,16 +221,16 @@ function App() {
         )}
 
         {viewMode === 'image' && savedImageUrl && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 text-center space-y-6">
+          <div className="card" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <button 
               onClick={() => { setViewMode('roster'); setSavedImageUrl(null); }}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontWeight: 500, transition: 'color 0.2s' }}
             >
               <ArrowLeft size={18} /> Back to Roster
             </button>
-            <h2 className="text-xl font-bold text-slate-800">Your Matchup Image</h2>
-            <p className="text-slate-500 text-sm">Long press or right-click the image to save it to your device.</p>
-            <img src={savedImageUrl} alt="Matchup" className="w-full rounded-xl border border-slate-200 shadow-md" />
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Your Matchup Image</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Long press or right-click the image to save it to your device.</p>
+            <img src={savedImageUrl} alt="Matchup" style={{ width: '100%', borderRadius: '12px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-md)' }} />
           </div>
         )}
 

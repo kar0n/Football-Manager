@@ -14,14 +14,14 @@ export const PlayerItemVisual = ({ player, index, teamColor, teamName, isOverlay
 
   return (
     <div 
-      className={`bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between shadow-sm transition-all ${isCompact ? 'p-2 mb-1.5' : 'mb-2'}`}
+      className={`player-item ${isCompact ? 'player-item-compact' : ''}`}
       style={overlayStyle}
     >
-      <div className="flex items-center flex-1">
+      <div className="player-info">
         {isAdmin && !isCompact && (
           <div 
-            className="text-slate-300 hover:text-slate-500 transition-colors p-1 -ml-1 mr-1"
-            style={{ cursor: isOverlay ? 'grabbing' : 'grab', touchAction: 'none' }}
+            className="drag-handle"
+            style={{ cursor: isOverlay ? 'grabbing' : 'grab' }}
             {...dragAttributes}
             {...dragListeners}
           >
@@ -29,12 +29,12 @@ export const PlayerItemVisual = ({ player, index, teamColor, teamName, isOverlay
           </div>
         )}
         <span 
-          className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs mr-3 shadow-sm"
+          className="player-number"
           style={{ background: teamColor, color: teamName === 'Team White' ? '#0f172a' : 'white' }}
         >
           {index + 1}
         </span>
-        <span className={`font-medium ${isCompact ? 'text-sm' : 'text-base'} text-slate-800 truncate flex-1`}>
+        <span className="player-name">
           {player.name}
         </span>
       </div>

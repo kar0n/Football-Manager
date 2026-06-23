@@ -42,17 +42,16 @@ export const JoinButton = ({ isAdmin, addPlayer, disabled }) => {
   };
 
   return (
-    <button 
-      onClick={handleJoinClick} 
-      disabled={disabled || isJoining}
-      className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-lg font-semibold transition-all duration-300 shadow-lg ${
-        disabled 
-          ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300' 
-          : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5'
-      }`}
-    >
-      <Zap size={20} className={isJoining ? 'animate-pulse' : ''} />
-      {isJoining ? 'Joining...' : isRegistrationBlocked ? 'Registration Opens at 7 AM' : 'Join Game'}
-    </button>
+    <div className="join-container" style={{ position: 'relative', background: 'transparent', padding: 0, boxShadow: 'none', border: 'none' }}>
+      <button 
+        onClick={handleJoinClick} 
+        disabled={disabled || isJoining}
+        className="join-btn action-btn"
+        style={{ width: '100%', padding: '1rem', borderRadius: '12px' }}
+      >
+        <Zap size={20} className={isJoining ? 'animate-pulse' : ''} />
+        {isJoining ? 'Joining...' : isRegistrationBlocked ? 'Registration Opens at 7 AM' : 'Join Game'}
+      </button>
+    </div>
   );
 };

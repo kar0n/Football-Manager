@@ -12,16 +12,13 @@ export const MatchupControls = ({
   generateTeams 
 }) => {
   return (
-    <div className="flex flex-col gap-3 mt-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
       {/* Primary Action Button */}
       {isAdmin ? (
         <button 
           onClick={handleFinalizeToggle} 
-          className={`py-4 rounded-xl flex items-center justify-center gap-2 font-semibold shadow-lg transition-all duration-300 ${
-            teamsFinalized
-              ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-              : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/20 hover:-translate-y-0.5'
-          }`}
+          className="action-btn"
+          style={teamsFinalized ? { background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca' } : {}}
         >
           {teamsFinalized ? (
             <><Unlock size={20} /> Unlock Teams</>
@@ -31,19 +28,15 @@ export const MatchupControls = ({
         </button>
       ) : null}
 
-      <div className={`grid ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
-        {/* Share Button (Shows for everyone, but visual varies) */}
+      <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? 'repeat(2, 1fr)' : '1fr', gap: '0.75rem' }}>
+        {/* Share Button */}
         <button 
           onClick={handleShare}
           disabled={isSharing}
-          className={`py-3 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all shadow-sm border ${
-            teamsFinalized 
-              ? 'bg-blue-500 text-white hover:bg-blue-600 border-transparent shadow-blue-500/20' 
-              : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
-          }`}
+          className={`action-btn ${teamsFinalized ? '' : 'secondary'}`}
         >
           {isSharing ? (
-            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <div style={{ width: '20px', height: '20px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           ) : (
             <Share2 size={18} />
           )}
@@ -52,10 +45,10 @@ export const MatchupControls = ({
 
         {/* Admin Secondary Controls */}
         {isAdmin && !teamsFinalized && (
-          <div className="grid grid-cols-2 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
             <button 
               onClick={toggleColors}
-              className="py-3 bg-white border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 font-medium transition-colors shadow-sm"
+              className="action-btn secondary"
             >
               <Palette size={18} /> Swap
             </button>
@@ -65,7 +58,7 @@ export const MatchupControls = ({
                   generateTeams();
                 }
               }}
-              className="py-3 bg-white border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 font-medium transition-colors shadow-sm"
+              className="action-btn secondary"
             >
               <RefreshCw size={18} /> Shuffle
             </button>
@@ -74,7 +67,7 @@ export const MatchupControls = ({
       </div>
 
       {hasUnsavedChanges && (
-        <div className="text-center mt-2 text-sm font-medium text-amber-600 bg-amber-50 py-2 rounded-lg border border-amber-200">
+        <div style={{ textAlign: 'center', marginTop: '0.5rem', color: '#d97706', fontSize: '0.875rem', fontWeight: 500, padding: '0.5rem', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a' }}>
           Unsaved manual changes
         </div>
       )}
