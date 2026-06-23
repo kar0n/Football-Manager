@@ -37,20 +37,6 @@ export const useTimers = () => {
     };
 
     const timeoutId = setupBoundaryTimer();
-
-    // Re-fetch state explicitly when the browser tab becomes active again.
-    // Safari does not always reliably trigger TanStack Query's native window focus 
-    // when returning from an aggressively suspended background tab.
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        queryClient.invalidateQueries({ queryKey: ['gameState'] });
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearTimeout(timeoutId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    return () => clearTimeout(timeoutId);
   }, [queryClient]);
 };
