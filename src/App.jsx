@@ -306,6 +306,17 @@ function App() {
     }
     const name = window.prompt("Enter your name:");
     if (name && name.trim()) {
+      // Re-evaluate the time block AFTER the prompt. 
+      // This prevents someone from clicking "Join" at 11:59 PM, leaving the prompt 
+      // open, and hitting "OK" at 1:12 AM to bypass the restriction.
+      const current = getISTDate();
+      const stillBlocked = !isAdmin && ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(current.weekdayStr) && current.hour >= 0 && current.hour < 7;
+      
+      if (stillBlocked) {
+        alert("Registration is closed from Midnight to 7:00 AM IST on weekdays.");
+        return;
+      }
+
       const playerData = { id: Date.now().toString(), name: name.trim(), joinedAt: Date.now() };
       
       // Atomic database operation — appends in a single SQL statement,

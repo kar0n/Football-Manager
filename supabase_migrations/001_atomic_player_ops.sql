@@ -18,20 +18,20 @@ CREATE POLICY "Allow reads" ON activity_log FOR SELECT TO anon USING (true);
 -- =============================================
 -- ATOMIC ADD PLAYER (with logging)
 -- =============================================
--- Only clears the matchup if the new total crosses a capacity threshold
--- (10→14 or 14→18), which changes the game format (5v5 → 7v7 → 9v9).
 CREATE OR REPLACE FUNCTION add_player(player_data jsonb, device_id text DEFAULT NULL)
 RETURNS void AS $$
 DECLARE
+  v_game_state record;
   current_count int;
   new_count int;
   old_capacity int;
   new_capacity int;
 BEGIN
-  SELECT jsonb_array_length(COALESCE(all_players, '[]'::jsonb))
-  INTO current_count
-  FROM game_state WHERE id = 1;
+  -- 1. Lock the row to prevent concurrent reads/writes from calculating stale capacities
+  SELECT * INTO v_game_state
+  FROM game_state WHERE id = 1 FOR UPDATE;
 
+  current_count := jsonb_array_length(COALESCE(v_game_state.all_players, '[]'::jsonb));
   new_count := current_count + 1;
 
   old_capacity := CASE
@@ -46,20 +46,20 @@ BEGIN
     ELSE 10
   END;
 
-  -- Add the player
+  -- 2. Add the player. Clear matchup if capacity crossed.
   IF old_capacity != new_capacity THEN
     UPDATE game_state
-    SET all_players = COALESCE(all_players, '[]'::jsonb) || jsonb_build_array(player_data),
+    SET all_players = COALESCE(v_game_state.all_players, '[]'::jsonb) || jsonb_build_array(player_data),
         matchup = NULL,
         teams_finalized = false
     WHERE id = 1;
   ELSE
     UPDATE game_state
-    SET all_players = COALESCE(all_players, '[]'::jsonb) || jsonb_build_array(player_data)
+    SET all_players = COALESCE(v_game_state.all_players, '[]'::jsonb) || jsonb_build_array(player_data)
     WHERE id = 1;
   END IF;
 
-  -- Log the action
+  -- 3. Log the action
   INSERT INTO activity_log (action, player_name, player_id, device_id)
   VALUES ('join', player_data->>'name', player_data->>'id', device_id);
 END;
@@ -68,25 +68,37 @@ $$ LANGUAGE plpgsql;
 -- =============================================
 -- ATOMIC REMOVE PLAYER (with logging)
 -- =============================================
--- Only clears the matchup if the removal crosses a capacity threshold
--- (18→14 or 14→10), which changes the game format (9v9 → 7v7 → 5v5).
 CREATE OR REPLACE FUNCTION remove_player(player_id text, device_id text DEFAULT NULL)
 RETURNS void AS $$
 DECLARE
+  v_game_state record;
+  removed_name text;
+  new_all_players jsonb;
   current_count int;
   new_count int;
   old_capacity int;
   new_capacity int;
-  removed_name text;
 BEGIN
-  SELECT jsonb_array_length(COALESCE(all_players, '[]'::jsonb))
-  INTO current_count
-  FROM game_state WHERE id = 1;
+  -- 1. Lock the row to prevent concurrent reads/writes from calculating stale capacities
+  SELECT * INTO v_game_state
+  FROM game_state WHERE id = 1 FOR UPDATE;
 
-  -- Get the name of the player being removed (for the log)
+  current_count := jsonb_array_length(COALESCE(v_game_state.all_players, '[]'::jsonb));
+
+  -- 2. Verify player exists and get their name
   SELECT elem->>'name' INTO removed_name
-  FROM game_state, jsonb_array_elements(all_players) elem
-  WHERE id = 1 AND elem->>'id' = player_id;
+  FROM jsonb_array_elements(v_game_state.all_players) elem
+  WHERE elem->>'id' = player_id;
+
+  IF removed_name IS NULL THEN
+    -- Player not found, nothing to do (prevents false capacity changes)
+    RETURN;
+  END IF;
+
+  -- 3. Build the new array without the player
+  SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb) INTO new_all_players
+  FROM jsonb_array_elements(v_game_state.all_players) elem
+  WHERE elem->>'id' != player_id;
 
   new_count := current_count - 1;
 
@@ -102,28 +114,20 @@ BEGIN
     ELSE 10
   END;
 
-  -- Remove the player
+  -- 4. Remove the player. Clear matchup if capacity crossed.
   IF old_capacity != new_capacity THEN
     UPDATE game_state 
-    SET all_players = (
-      SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
-      FROM jsonb_array_elements(all_players) elem
-      WHERE elem->>'id' != player_id
-    ),
-    matchup = NULL,
-    teams_finalized = false
+    SET all_players = new_all_players,
+        matchup = NULL,
+        teams_finalized = false
     WHERE id = 1;
   ELSE
     UPDATE game_state 
-    SET all_players = (
-      SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
-      FROM jsonb_array_elements(all_players) elem
-      WHERE elem->>'id' != player_id
-    )
+    SET all_players = new_all_players
     WHERE id = 1;
   END IF;
 
-  -- Log the action
+  -- 5. Log the action
   INSERT INTO activity_log (action, player_name, player_id, device_id)
   VALUES ('remove', removed_name, player_id, device_id);
 END;
