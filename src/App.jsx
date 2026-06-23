@@ -741,6 +741,9 @@ function App() {
                         <span className="player-number" style={{ fontSize: '0.75rem' }}>WL{index + 1}</span>
                         <div className="player-details">
                           <span className="player-name">{player.name}</span>
+                          <span className="player-meta">
+                            Joined at {formatTime(player.joinedAt)}
+                          </span>
                         </div>
                       </div>
                       <button onClick={() => handleRemove(player.id, player.name)} className="remove-btn" title="Remove Player">
