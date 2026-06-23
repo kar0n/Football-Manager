@@ -88,6 +88,16 @@ function App() {
   const [allPlayers, setAllPlayers] = useState([]);
   const [newName, setNewName] = useState('');
 
+  // Generate a persistent device fingerprint for activity tracking
+  const getDeviceId = () => {
+    let id = localStorage.getItem('deviceId');
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem('deviceId', id);
+    }
+    return id;
+  };
+
   
   // App States
   const [matchup, setMatchup] = useState(null);
@@ -140,17 +150,32 @@ function App() {
         let currentPlayers = data.all_players || [];
         
         // --- LAZY ROLLOVER LOGIC ---
+        // Runs once on the first page load of a new day.
         const { dateString, weekdayStr } = getISTDate();
         if (data.last_rollover_date && dateString > data.last_rollover_date) {
           const gameDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
           if (gameDays.includes(weekdayStr)) {
-            // Weekday midnight rollover: Truncate waitlist
-            const capacity = (currentPlayers.length >= 18) ? 18 : (currentPlayers.length >= 14 ? 14 : 10);
-            currentPlayers = currentPlayers.slice(0, capacity);
+            if (data.teams_finalized && data.matchup) {
+              // Teams were finalized yesterday — carry forward ONLY the players
+              // from the actual finalized matchup (teamA + teamB).
+              // This prevents manipulation: even if someone swapped names on
+              // the roster after finalization, the matchup is the locked truth.
+              const matchupPlayers = [
+                ...data.matchup.teamA.players,
+                ...data.matchup.teamB.players
+              ];
+              currentPlayers = matchupPlayers;
+            } else {
+              // No finalized matchup (no game happened) — just truncate waitlist
+              const cap = (currentPlayers.length >= 18) ? 18 : (currentPlayers.length >= 14 ? 14 : 10);
+              currentPlayers = currentPlayers.slice(0, cap);
+            }
           }
-          // Update database with new rollover date (and truncated players if applicable)
+          // Clear matchup for the new day and update rollover date
           supabase.from('game_state').update({
             all_players: currentPlayers,
+            matchup: null,
+            teams_finalized: false,
             last_rollover_date: dateString
           }).eq('id', 1).then();
         } else if (!data.last_rollover_date) {
@@ -281,14 +306,26 @@ function App() {
     }
     const name = window.prompt("Enter your name:");
     if (name && name.trim()) {
-      // Fetch the latest player list from DB to avoid overwriting other players
-      const { data } = await supabase.from('game_state').select('all_players').eq('id', 1).single();
-      const currentPlayers = (data && data.all_players) || [];
-      const newPlayers = [...currentPlayers, { id: Date.now().toString(), name: name.trim(), joinedAt: Date.now() }];
-      setAllPlayers(newPlayers);
-      setMatchup(null);
-      setTeamsFinalized(false);
-      updateGameState({ all_players: newPlayers, matchup: null, teams_finalized: false });
+      const playerData = { id: Date.now().toString(), name: name.trim(), joinedAt: Date.now() };
+      
+      // Atomic database operation — appends in a single SQL statement,
+      // so concurrent joins from different browsers can never overwrite each other.
+      // The RPC also smartly handles matchup clearing: it only resets the matchup
+      // if the new player count crosses a capacity threshold (5v5→7v7 or 7v7→9v9).
+      const { error } = await supabase.rpc('add_player', { player_data: playerData, device_id: getDeviceId() });
+      if (error) {
+        console.error('Error adding player:', error);
+        alert('Failed to join. Please try again.');
+        return;
+      }
+      
+      // Refresh all local state from DB to stay in sync
+      const { data } = await supabase.from('game_state').select('all_players, matchup, teams_finalized').eq('id', 1).single();
+      if (data) {
+        setAllPlayers(data.all_players || []);
+        setMatchup(data.matchup);
+        setTeamsFinalized(data.teams_finalized || false);
+      }
       
       setTimeout(() => {
         const listElement = document.querySelector('.player-list');
@@ -302,14 +339,24 @@ function App() {
 
   const handleRemove = async (idToRemove, name) => {
     if (window.confirm(`Are you sure you want to remove ${name} from the roster?`)) {
-      // Fetch the latest player list from DB to avoid overwriting other players
-      const { data } = await supabase.from('game_state').select('all_players').eq('id', 1).single();
-      const currentPlayers = (data && data.all_players) || [];
-      const newPlayers = currentPlayers.filter(p => p.id !== idToRemove);
-      setAllPlayers(newPlayers);
-      setMatchup(null);
-      setTeamsFinalized(false);
-      updateGameState({ all_players: newPlayers, matchup: null, teams_finalized: false });
+      // Atomic database operation — removes in a single SQL statement,
+      // so concurrent add/remove from different browsers can never conflict.
+      // The RPC also smartly handles matchup clearing: it only resets the matchup
+      // if the removal crosses a capacity threshold (9v9→7v7 or 7v7→5v5).
+      const { error } = await supabase.rpc('remove_player', { player_id: idToRemove, device_id: getDeviceId() });
+      if (error) {
+        console.error('Error removing player:', error);
+        alert('Failed to remove player. Please try again.');
+        return;
+      }
+      
+      // Refresh all local state from DB to stay in sync
+      const { data } = await supabase.from('game_state').select('all_players, matchup, teams_finalized').eq('id', 1).single();
+      if (data) {
+        setAllPlayers(data.all_players || []);
+        setMatchup(data.matchup);
+        setTeamsFinalized(data.teams_finalized || false);
+      }
     }
   };
 
@@ -365,6 +412,14 @@ function App() {
     setTeamsFinalized(true);
     setHasUnsavedChanges(false);
     await updateGameState({ matchup: matchup, teams_finalized: true });
+    
+    // Log the finalize action
+    await supabase.from('activity_log').insert({
+      action: 'finalize',
+      player_name: null,
+      player_id: null,
+      device_id: getDeviceId()
+    });
     
     // Show success toast
     setShowToast(true);
