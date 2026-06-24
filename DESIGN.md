@@ -19,11 +19,53 @@ graph LR
 
 ### 1. Modular Directory Structure
 The application has been explicitly architected for scalability and maintainability by moving away from a monolithic `App.jsx` to a clean, decoupled structure:
-- **`src/config/`**: Holds all hardcoded business logic parameters (capacity limits, team themes, game days, registration windows).
-- **`src/services/`**: Abstracts all Supabase interactions. UI components never talk directly to the database.
-- **`src/hooks/`**: Centralizes global state, realtime event subscriptions, and boundary timers (`useGameState`, `useBoundaryTimer`).
-- **`src/components/`**: Pure UI functions logically separated into `roster` and `matchup` domains.
-- **`src/App.jsx`**: Acts solely as a composition shell orchestrating the hooks and components.
+
+```text
+src/
+├── main.jsx                          # Entry point that mounts the React application
+├── index.css                         # Global design tokens, CSS variables, and resets
+├── App.jsx                           # Composition shell orchestrating the global hooks and views
+├── App.css                           # All component-level styling and glassmorphism rules
+│
+├── lib/
+│   └── supabase.js                   # Initializes the Supabase client connection
+│
+├── config/
+│   └── constants.js                  # Hardcoded values (capacity limits, themes, passwords, hours)
+│
+├── utils/
+│   ├── time.js                       # Pure functions for calculating IST dates and format times
+│   └── device.js                     # Generates and retrieves the persistent local device ID
+│
+├── services/
+│   └── gameService.js                # Centralizes all Supabase database calls and RPC invocations
+│
+├── hooks/
+│   ├── useGameState.js               # Main orchestrator: state, realtime, visibility, and rollover logic
+│   └── useBoundaryTimer.js           # Isolated hook that forces reloads at Midnight and 7:00 AM IST
+│
+├── components/
+│   ├── Header.jsx                    # Renders the app title and primary logo
+│   ├── Toast.jsx                     # Reusable success notification banner
+│   ├── ImagePreview.jsx              # View displaying the generated matchup screenshot for saving
+│   │
+│   ├── roster/
+│   │   ├── JoinButton.jsx            # "Join Game" CTA with time-based disabling logic
+│   │   ├── PlayerItem.jsx            # Single row representing a player in either list
+│   │   ├── ConfirmedList.jsx         # Card displaying the active players based on current capacity
+│   │   └── WaitlistCard.jsx          # Card displaying overflow players waiting for spots
+│   │
+│   └── matchup/
+│       ├── MatchupBoard.jsx          # The main drag-and-drop arena for the generated teams
+│       ├── MatchupActions.jsx        # Toolbar containing Back, Toggle Colors, and Finalize buttons
+│       ├── TeamCard.jsx              # Column representing a single team and its dropped players
+│       ├── SortablePlayerItem.jsx    # dnd-kit wrapper providing drag physics to a player chip
+│       └── PlayerItemVisual.jsx      # Pure UI chip for the player (used in grid and as drag ghost)
+│
+└── logic/
+    ├── teamGenerator.js              # Pure functions for Fisher-Yates shuffling and team splitting
+    └── dragHandlers.js               # Extracted dnd-kit event callbacks (onDragStart, onDragEnd)
+```
 
 ### 2. The Single-Row State & Atomic RPCs
 Instead of managing complex relational tables linking `users`, `games`, and `waitlists`, the core application runs off a **single row** in the PostgreSQL `game_state` table containing JSONB arrays for players and the matchup configuration.
