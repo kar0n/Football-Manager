@@ -55,11 +55,7 @@ export const useGameState = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
-  // Block pull-to-refresh on mobile when there are unsaved changes
-  useEffect(() => {
-    document.body.style.overscrollBehaviorY = hasUnsavedChanges ? 'contain' : 'auto';
-    return () => { document.body.style.overscrollBehaviorY = 'auto'; };
-  }, [hasUnsavedChanges]);
+
 
   // --- Initial Fetch + Realtime + Visibility Listener ---
   useEffect(() => {
