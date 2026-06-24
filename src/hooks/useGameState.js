@@ -175,6 +175,7 @@ export const useGameState = () => {
     const pwd = window.prompt("Enter admin password:");
     if (pwd === ADMIN_PASSWORD) {
       setIsAdmin(true);
+      await logActivity('admin_login', getDeviceId());
       const data = await fetchMatchupState();
       if (data && data.matchup) {
         setMatchup(data.matchup);
@@ -253,6 +254,7 @@ export const useGameState = () => {
     setTeamsFinalized(false);
     setViewMode('matchup');
     setHasUnsavedChanges(true);
+    logActivity('generate_teams', getDeviceId());
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 10);
@@ -262,6 +264,7 @@ export const useGameState = () => {
     if (!matchup) return;
     setMatchup(toggleTheme(matchup));
     setHasUnsavedChanges(true);
+    logActivity('toggle_colors', getDeviceId());
   };
 
   const handleShare = async () => {
