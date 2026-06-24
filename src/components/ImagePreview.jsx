@@ -21,8 +21,19 @@ export const ImagePreview = ({ savedImageUrl, onDone }) => {
         alt="Finalized Teams"
         style={{ width: '100%', maxWidth: '500px', borderRadius: '12px', border: '2px solid rgba(148, 163, 184, 0.2)' }}
       />
-      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6 }}>
-        <p style={{ fontWeight: 600, color: '#f8fafc', fontSize: '1.1rem', marginBottom: '0.5rem' }}>📸 Team image generated!</p>
+      <div style={{
+        textAlign: 'center',
+        color: '#e2e8f0',
+        fontSize: '0.95rem',
+        lineHeight: 1.6,
+        background: 'rgba(30, 41, 59, 0.85)',
+        border: '1px solid rgba(148, 163, 184, 0.25)',
+        borderRadius: '12px',
+        padding: '1rem 1.25rem',
+        width: '100%',
+        maxWidth: '500px',
+      }}>
+        <p style={{ fontWeight: 600, color: '#ffffff', fontSize: '1.1rem', marginBottom: '0.5rem' }}>📸 Team image generated!</p>
         <p><strong>Long-press</strong> the image above → <strong>Save to Photos</strong></p>
         <p>Then share it on WhatsApp from your gallery.</p>
       </div>
