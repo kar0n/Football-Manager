@@ -6,7 +6,7 @@ This document maps out the core data flow, synchronization mechanisms, automated
 
 ```mermaid
 graph LR
-    Client[React Frontend (Modular)] 
+    Client["React Frontend (Modular)"] 
     DB[(Supabase Database)]
     Realtime[Supabase Realtime]
 
