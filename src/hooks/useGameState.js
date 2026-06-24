@@ -291,22 +291,50 @@ export const useGameState = () => {
 
         const file = new File([blob], 'football-matchup.png', { type: 'image/png' });
 
-        // Try native file sharing (Safari iOS, Chrome Android, Brave)
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        // --- Belt-and-suspenders Web Share API strategy ---
+        //
+        // Chrome (CriOS) and Firefox (FxiOS) on iOS are WebKit wrappers that
+        // falsely report navigator.canShare === true for files, but Apple's sandbox
+        // blocks the actual share() call. Worse, they throw an unpredictable
+        // AbortError or NotAllowedError — indistinguishable from a user cancel.
+        // So we skip the API entirely for these browsers and go straight to the
+        // manual save fallback, rather than playing error-guessing games.
+        const ua = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        const isBrokenIOSBrowser = isIOS && (/CriOS/i.test(ua) || /FxiOS/i.test(ua));
+
+        if (!isBrokenIOSBrowser && navigator.canShare && navigator.canShare({ files: [file] })) {
+          // Browser genuinely supports file sharing — try the native share sheet
           try {
             await navigator.share({
               files: [file],
               title: 'Weekday Football Matchup',
               text: 'Here are the finalized teams!',
             });
+            // Share sheet was shown and user either shared or dismissed it
+            setIsAdmin(false);
+            setHasUnsavedChanges(false);
+            setViewMode('roster');
           } catch (err) {
-            console.log('Share dismissed:', err);
+            if (err.name === 'AbortError') {
+              // User explicitly cancelled the share sheet — go home normally
+              setIsAdmin(false);
+              setHasUnsavedChanges(false);
+              setViewMode('roster');
+            } else {
+              // Unexpected API failure on a browser that claimed it could share
+              // Route to the manual fallback rather than stranding the user
+              console.warn('Unexpected share failure, falling back to image view:', err);
+              const imageUrl = URL.createObjectURL(blob);
+              setSavedImageUrl(imageUrl);
+              setIsAdmin(false);
+              setHasUnsavedChanges(false);
+              setViewMode('image');
+            }
           }
-          setIsAdmin(false);
-          setHasUnsavedChanges(false);
-          setViewMode('roster');
         } else {
-          // Fallback: Show image directly on the page so user can save it
+          // Browser explicitly can't share files, OR it's a known broken iOS wrapper —
+          // skip the gamble entirely and go straight to the manual save view
           const imageUrl = URL.createObjectURL(blob);
           setSavedImageUrl(imageUrl);
           setIsAdmin(false);
