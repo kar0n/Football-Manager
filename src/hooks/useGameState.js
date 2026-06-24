@@ -129,17 +129,23 @@ export const useGameState = () => {
       }
     });
 
-    // Re-fetch state when the browser tab becomes active again.
+    // Re-fetch state when the browser tab becomes active, window gains focus, or network returns.
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchState();
       }
     };
+    const handleFocus = () => fetchState();
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleFocus);
 
     return () => {
       unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleFocus);
     };
   }, []);
 
