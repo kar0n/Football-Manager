@@ -66,7 +66,7 @@ export const getTargetGameDay = (weekdayStr) => {
 export const isTodayIST = (timestamp) => {
   const opts = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' };
   const todayStr = new Date().toLocaleString('en-US', opts);
-  const tsStr = new Date(timestamp).toLocaleString('en-US', opts);
+  const tsStr = new Date(parseInt(timestamp, 10)).toLocaleString('en-US', opts);
   return todayStr === tsStr;
 };
 
@@ -74,6 +74,6 @@ export const isTodayIST = (timestamp) => {
  * Formats a Unix timestamp into a human-readable time string (e.g. "07:32:15 AM").
  */
 export const formatTime = (timestamp) => {
-  const d = new Date(timestamp);
+  const d = new Date(parseInt(timestamp, 10));
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
