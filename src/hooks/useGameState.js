@@ -97,8 +97,15 @@ export const useGameState = () => {
         }
 
         setAllPlayers(currentPlayers);
-        setMatchup(data.matchup);
-        setTeamsFinalized(data.teams_finalized || false);
+
+        // Don't overwrite the admin's local draft with stale DB state.
+        // When the admin generates teams locally but hasn't finalized yet,
+        // the DB still has matchup: null. A focus/visibility refetch would
+        // clobber the local draft and kick the admin back to the roster.
+        if (!hasUnsavedChangesRef.current) {
+          setMatchup(data.matchup);
+          setTeamsFinalized(data.teams_finalized || false);
+        }
       }
     };
     fetchState();
