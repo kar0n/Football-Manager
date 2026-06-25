@@ -60,7 +60,7 @@ export const getToggleProps = (matchup) => {
   if (matchup.theme === 'bw') {
     return {
       text: 'Red vs Blue',
-      style: { color: '#ef4444', borderColor: '#3b82f6', background: 'rgba(59, 130, 246, 0.85)' },
+      style: { color: '#ef4444', borderColor: '#1e3a8a', background: 'rgba(30, 58, 138, 0.95)' },
     };
   }
   return {
