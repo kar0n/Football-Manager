@@ -21,7 +21,7 @@ export const PlayerItem = ({ player, index, label, isWaitlist, onRemove }) => {
           <span className="player-name">{player.name}</span>
           <span className="player-meta">
             {isCarriedForward ? (
-              <span style={{ color: 'var(--primary)', fontWeight: '600' }}>Carry forward</span>
+              <span style={{ color: '#3b82f6', fontWeight: '700' }}>Carry forward</span>
             ) : (
               `Joined at ${formatTime(player.joinedAt)}`
             )}
