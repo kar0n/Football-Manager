@@ -13,7 +13,7 @@ export const JoinButton = ({ isRegistrationBlocked, targetDay, onJoin }) => {
       >
         {isRegistrationBlocked
           ? 'Registration opens at 7:00 AM IST'
-          : `Join Game for ${targetDay.full.split(' ')[0]}`}
+          : `Join Game for ${targetDay.full}`}
       </button>
     </div>
   );
