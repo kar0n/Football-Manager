@@ -27,7 +27,7 @@ export const PlayerItemVisual = ({ player, index, teamColor, teamName, isOverlay
             <GripVertical size={18} />
           </div>
         )}
-        <span className="player-number" style={{ background: teamColor, color: teamName === 'Team White' ? '#0f172a' : 'white' }}>{index + 1}</span>
+        <span className="player-number" style={{ background: teamColor, color: teamName === 'Team White' ? '#0f172a' : 'white', border: teamName === 'Team White' ? '1.5px solid #0f172a' : '1.5px solid transparent' }}>{index + 1}</span>
         <span className="player-name">{player.name}</span>
       </div>
     </div>
