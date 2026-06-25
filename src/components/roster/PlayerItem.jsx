@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { formatTime } from '../../utils/time';
+import { formatTime, isTodayIST } from '../../utils/time';
 
 /**
  * A single player row in the roster list.
@@ -9,6 +9,8 @@ import { formatTime } from '../../utils/time';
  * and lines 898–911 (confirmed).
  */
 export const PlayerItem = ({ player, index, label, isWaitlist, onRemove }) => {
+  const isCarriedForward = !isTodayIST(player.joinedAt);
+
   return (
     <div className="player-item" style={isWaitlist ? { opacity: 0.85 } : {}}>
       <div className="player-info">
@@ -18,7 +20,11 @@ export const PlayerItem = ({ player, index, label, isWaitlist, onRemove }) => {
         <div className="player-details">
           <span className="player-name">{player.name}</span>
           <span className="player-meta">
-            Joined at {formatTime(player.joinedAt)}
+            {isCarriedForward ? (
+              <span style={{ color: 'var(--primary)', fontWeight: '600' }}>Carry forward</span>
+            ) : (
+              `Joined at ${formatTime(player.joinedAt)}`
+            )}
           </span>
         </div>
       </div>

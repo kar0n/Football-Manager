@@ -61,6 +61,16 @@ export const getTargetGameDay = (weekdayStr) => {
 };
 
 /**
+ * Checks if a given timestamp falls on the current day in IST.
+ */
+export const isTodayIST = (timestamp) => {
+  const opts = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' };
+  const todayStr = new Date().toLocaleString('en-US', opts);
+  const tsStr = new Date(timestamp).toLocaleString('en-US', opts);
+  return todayStr === tsStr;
+};
+
+/**
  * Formats a Unix timestamp into a human-readable time string (e.g. "07:32:15 AM").
  */
 export const formatTime = (timestamp) => {
