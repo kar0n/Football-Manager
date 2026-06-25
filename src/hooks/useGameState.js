@@ -38,10 +38,13 @@ export const useGameState = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const hasUnsavedChangesRef = useRef(false);
 
-  // Keep the ref in sync with state (needed by event handlers that close over stale values)
-  useEffect(() => {
-    hasUnsavedChangesRef.current = hasUnsavedChanges;
-  }, [hasUnsavedChanges]);
+  // Wrapper that updates the ref synchronously in the same tick as the state.
+  // This eliminates the race window where a focus-triggered fetchState()
+  // could read a stale ref before the useEffect had a chance to sync it.
+  const setHasUnsavedChangesSync = (value) => {
+    hasUnsavedChangesRef.current = value;
+    setHasUnsavedChanges(value);
+  };
 
   // Warn on browser close if there are unsaved changes
   useEffect(() => {
@@ -117,7 +120,7 @@ export const useGameState = () => {
       if (payload.new.teams_finalized && payload.new.matchup) {
         if (hasUnsavedChangesRef.current) {
           alert("Another admin has finalized a team matchup. Your view will now refresh.");
-          setHasUnsavedChanges(false);
+          setHasUnsavedChangesSync(false);
         }
         setTeamsFinalized(true);
         setMatchup(payload.new.matchup);
@@ -125,7 +128,7 @@ export const useGameState = () => {
         if (payload.new.matchup === null) {
           if (hasUnsavedChangesRef.current) {
             alert("The roster has changed! Your team draft has been reset.");
-            setHasUnsavedChanges(false);
+            setHasUnsavedChangesSync(false);
           }
           setMatchup(null);
           setTeamsFinalized(false);
@@ -172,7 +175,7 @@ export const useGameState = () => {
 
   // --- Drag Handlers ---
   const dragHandlers = useMemo(
-    () => createDragHandlers(setMatchup, setHasUnsavedChanges, setActiveId),
+    () => createDragHandlers(setMatchup, setHasUnsavedChangesSync, setActiveId),
     []
   );
 
@@ -259,7 +262,7 @@ export const useGameState = () => {
     setMatchup(newMatchup);
     setTeamsFinalized(false);
     setViewMode('matchup');
-    setHasUnsavedChanges(true);
+    setHasUnsavedChangesSync(true);
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 10);
@@ -268,13 +271,13 @@ export const useGameState = () => {
   const handleToggleColors = () => {
     if (!matchup) return;
     setMatchup(toggleTheme(matchup));
-    setHasUnsavedChanges(true);
+    setHasUnsavedChangesSync(true);
   };
 
   const handleShare = async () => {
     setIsSharing(true);
     setTeamsFinalized(true);
-    setHasUnsavedChanges(false);
+    setHasUnsavedChangesSync(false);
     await updateGameState({ matchup: matchup, teams_finalized: true });
 
     await logActivity('finalize', getDeviceId());
@@ -320,13 +323,13 @@ export const useGameState = () => {
             });
             // Share sheet was shown and user either shared or dismissed it
             setIsAdmin(false);
-            setHasUnsavedChanges(false);
+            setHasUnsavedChangesSync(false);
             setViewMode('roster');
           } catch (err) {
             if (err.name === 'AbortError') {
               // User explicitly cancelled the share sheet — go home normally
               setIsAdmin(false);
-              setHasUnsavedChanges(false);
+              setHasUnsavedChangesSync(false);
               setViewMode('roster');
             } else {
               // Unexpected API failure on a browser that claimed it could share
@@ -335,7 +338,7 @@ export const useGameState = () => {
               const imageUrl = URL.createObjectURL(blob);
               setSavedImageUrl(imageUrl);
               setIsAdmin(false);
-              setHasUnsavedChanges(false);
+              setHasUnsavedChangesSync(false);
               setViewMode('image');
             }
           }
@@ -345,7 +348,7 @@ export const useGameState = () => {
           const imageUrl = URL.createObjectURL(blob);
           setSavedImageUrl(imageUrl);
           setIsAdmin(false);
-          setHasUnsavedChanges(false);
+          setHasUnsavedChangesSync(false);
           setViewMode('image');
         }
 
@@ -362,7 +365,7 @@ export const useGameState = () => {
   const handleBackClick = async () => {
     if (hasUnsavedChanges) {
       if (window.confirm("You haven't clicked 'Finalize & Share' yet.\n\nAre you sure you want to go back? Your current team layout will be lost.")) {
-        setHasUnsavedChanges(false);
+        setHasUnsavedChangesSync(false);
         const data = await fetchMatchupOnly();
         if (data) setMatchup(data.matchup);
         setIsAdmin(false);
